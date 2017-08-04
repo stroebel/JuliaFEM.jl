@@ -1,0 +1,29 @@
+{
+    "docs": [
+        {
+            "location": "/", 
+            "text": "JuliaFEM.jl documentation\n\n\n\n\nJuliaFEM.jl documentation\n\n\nConstants\n\n\nFunctions\n\n\nIndex\n\n\n\n\n\n\n\n\n\n\nConstants\n\n\nAdd here.\n\n\n\n\nFunctions\n\n\n#\n\n\nJuliaFEM.Preprocess.create_surface_elements\n \n \nFunction\n.\n\n\ncreate_surface_elements(mesh::Mesh, surface_name::Symbol)\n\n\n\n\nCreate a set of surface elements from solid elements.\n\n\nNotation follow what is defined in ABAQUS. For example, if solid elements are Tet10, surface elements will be Tri6 and they can be used to define boundary conditions.\n\n\nsource\n\n\ncreate_surface_elements(mesh::Mesh, surface_name::String)\n\n\n\n\nCreate a set of surface elements from solid elements.\n\n\nNotation follow what is defined in ABAQUS. For example, if solid elements are Tet10, surface elements will be Tri6 and they can be used to define boundary conditions.\n\n\nsource\n\n\n\n\nIndex\n\n\n\n\nJuliaFEM.Preprocess.create_surface_elements", 
+            "title": "Home"
+        }, 
+        {
+            "location": "/#juliafemjl-documentation", 
+            "text": "JuliaFEM.jl documentation  Constants  Functions  Index", 
+            "title": "JuliaFEM.jl documentation"
+        }, 
+        {
+            "location": "/#constants", 
+            "text": "Add here.", 
+            "title": "Constants"
+        }, 
+        {
+            "location": "/#functions", 
+            "text": "#  JuliaFEM.Preprocess.create_surface_elements     Function .  create_surface_elements(mesh::Mesh, surface_name::Symbol)  Create a set of surface elements from solid elements.  Notation follow what is defined in ABAQUS. For example, if solid elements are Tet10, surface elements will be Tri6 and they can be used to define boundary conditions.  source  create_surface_elements(mesh::Mesh, surface_name::String)  Create a set of surface elements from solid elements.  Notation follow what is defined in ABAQUS. For example, if solid elements are Tet10, surface elements will be Tri6 and they can be used to define boundary conditions.  source", 
+            "title": "Functions"
+        }, 
+        {
+            "location": "/#index", 
+            "text": "JuliaFEM.Preprocess.create_surface_elements", 
+            "title": "Index"
+        }
+    ]
+}
