@@ -2,7 +2,8 @@ using JuliaFEM
 using JuliaFEM.Preprocess
 using JuliaFEM.Postprocess
 
-model = "EIFFEL_TOWER_TET10_220271"
+#model = "EIFFEL_TOWER_TET10_220271"
+model = ARGS[1]
 mesh = joinpath("eiffel-tower", "$model.inp")
 results = "$model"
 
