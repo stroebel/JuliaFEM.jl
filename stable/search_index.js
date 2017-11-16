@@ -73,30 +73,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#JuliaFEM.Element",
-    "page": "API",
-    "title": "JuliaFEM.Element",
-    "category": "Type",
-    "text": "Construct a new element of type E.\n\nExamples\n\njulia> element = Element(Tri3, [1, 2, 3])\n\n\n\n"
-},
-
-{
-    "location": "api.html#JuliaFEM.Problem",
-    "page": "API",
-    "title": "JuliaFEM.Problem",
-    "category": "Type",
-    "text": "Construct a new field problem.\n\nExamples\n\nCreate vector-valued (dim=3) elasticity problem:\n\njulia> prob1 = Problem(Elasticity, \"this is my problem\", 3) julia> prob2 = Problem(Elasticity, 3)\n\n\n\nConstruct a new boundary problem.\n\nExamples\n\nCreate Dirichlet boundary problem for vector-valued (dim=3) elasticity problem.\n\njulia> bc1 = Problem(Dirichlet, \"support\", 3, \"displacement\") solver.\n\n\n\n"
-},
-
-{
-    "location": "api.html#JuliaFEM.Elasticity",
-    "page": "API",
-    "title": "JuliaFEM.Elasticity",
-    "category": "Type",
-    "text": "Elasticity equations.\n\nField equation is:\n\nm∂²u/∂t² = ∇⋅σ - b\n\nWeak form is: find u∈U such that ∀v in V\n\nδW := ∫ρ₀∂²u/∂t²⋅δu dV₀ + ∫S:δE dV₀ - ∫b₀⋅δu dV₀ - ∫t₀⋅δu dA₀ = 0\n\nwhere\n\nρ₀ = density\nb₀ = displacement load\nt₀ = displacement traction\n\nFormulations\n\nplane stress, plane strain, 3D\n\nReferences\n\nhttps://en.wikipedia.org/wiki/Linear_elasticity https://en.wikipedia.org/wiki/Finite_strain_theory https://en.wikipedia.org/wiki/Stress_measures https://en.wikipedia.org/wiki/Mooney%E2%80%93Rivlin_solid https://en.wikipedia.org/wiki/Strain_energy_density_function https://en.wikipedia.org/wiki/Plane_stress https://en.wikipedia.org/wiki/Hooke's_law\n\n\n\n"
-},
-
-{
     "location": "api.html#Types-1",
     "page": "API",
     "title": "Types",
@@ -105,11 +81,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#JuliaFEM.update!",
+    "location": "api.html#FEMBase.update!",
     "page": "API",
-    "title": "JuliaFEM.update!",
+    "title": "FEMBase.update!",
     "category": "Function",
-    "text": "Update time-dependent fields with new values.\n\nExamples\n\njulia> f = Field(0.0 => 1.0) julia> update!(f, 1.0 => 2.0)\n\nNow field has two (time, value) pairs: (0.0, 1.0) and (1.0, 2.0)\n\nNotes\n\nTime vector is assumed to be ordered t_i-1 < t_i < t_i+1. If updating field with already existing time the old value is replaced with new one.\n\n\n\nUpdate element field based on a dictionary of nodal data and connectivity information.\n\nExamples\n\njulia> data = Dict(1 => [0.0, 0.0], 2 => [1.0, 2.0]) julia> element = Seg2([1, 2]) julia> update!(element, \"geometry\", data)\n\nAs a result element now have time invariant (variable) vector field \"geometry\" with data ([0.0, 0.0], [1.0, 2.0]).\n\n\n\nupdate!(problem.properties, attr...)\n\nUpdate properties for a problem.\n\nExample\n\nupdate!(body.properties, \"finite_strain\" => \"false\")\n\n\n\nUpdate problem solution vector for assembly. \n\n\n\nUpdate solution from assebly to elements. \n\n\n\nDefault update for solver. \n\n\n\n"
+    "text": "Default update for solver. \n\n\n\n"
 },
 
 {
