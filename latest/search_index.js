@@ -73,6 +73,30 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "api.html#FEMBase.Element",
+    "page": "API",
+    "title": "FEMBase.Element",
+    "category": "Type",
+    "text": "Element(element_type, connectivity_vector)\n\nConstruct a new element where element_type is the type of the element and connectivity_vector is the vector of nodes that the element is connected to.\n\nExamples\n\nIn the example a new element (E in the figure below) of type Tri3 is created. This spesific element connects to nodes 89, 43, 12 in the finite element mesh.\n\nelement = Element(Tri3, [89, 43, 12])\n\n(Image: img)\n\n\n\n"
+},
+
+{
+    "location": "api.html#FEMBase.Problem",
+    "page": "API",
+    "title": "FEMBase.Problem",
+    "category": "Type",
+    "text": "Defines types for Problem variables.\n\nExamples\n\nThe type of 'elements' is Vector{Element}\n\nAdd elements into the Problem element list.\n\na = [1, 2, 3]\nProblem.elements = a\n\n\n\n"
+},
+
+{
+    "location": "api.html#JuliaFEM.Elasticity",
+    "page": "API",
+    "title": "JuliaFEM.Elasticity",
+    "category": "Type",
+    "text": "Elasticity equations.\n\nField equation is:\n\nm∂²u/∂t² = ∇⋅σ - b\n\nWeak form is: find u∈U such that ∀v in V\n\nδW := ∫ρ₀∂²u/∂t²⋅δu dV₀ + ∫S:δE dV₀ - ∫b₀⋅δu dV₀ - ∫t₀⋅δu dA₀ = 0\n\nwhere\n\nρ₀ = density\nb₀ = displacement load\nt₀ = displacement traction\n\nFormulations\n\nplane stress, plane strain, 3D\n\nReferences\n\nhttps://en.wikipedia.org/wiki/Linear_elasticity https://en.wikipedia.org/wiki/Finite_strain_theory https://en.wikipedia.org/wiki/Stress_measures https://en.wikipedia.org/wiki/Mooney%E2%80%93Rivlin_solid https://en.wikipedia.org/wiki/Strain_energy_density_function https://en.wikipedia.org/wiki/Plane_stress https://en.wikipedia.org/wiki/Hooke's_law\n\n\n\n"
+},
+
+{
     "location": "api.html#Types-1",
     "page": "API",
     "title": "Types",
@@ -85,7 +109,7 @@ var documenterSearchIndex = {"docs": [
     "page": "API",
     "title": "FEMBase.update!",
     "category": "Function",
-    "text": "Default update for solver. \n\n\n\n"
+    "text": "Default update for solver. \n\n\n\nupdate!(field, data)\n\nUpdate new value to field.\n\n\n\nupdate!(problem.properties, attr...)\n\nUpdate properties for a problem.\n\nExample\n\nupdate!(body.properties, \"finite_strain\" => \"false\")\n\n\n\nupdate!(problem, assembly, u, la)\n\nUpdate the problem solution vector for assembly.\n\n\n\nupdate!(problem, assembly, elements, time)\n\nUpdate a solution from the assebly to elements.\n\n\n\n"
 },
 
 {
