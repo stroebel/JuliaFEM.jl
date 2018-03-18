@@ -148,7 +148,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.AbstractField",
     "page": "Fields",
     "title": "FEMBase.AbstractField",
-    "category": "Type",
+    "category": "type",
     "text": "AbstractField\n\nAbstract supertype for all fields in JuliaFEM.\n\n\n\n"
 },
 
@@ -156,7 +156,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.DCTI",
     "page": "Fields",
     "title": "FEMBase.DCTI",
-    "category": "Type",
+    "category": "type",
     "text": "DCTI{T} <: AbstractField\n\nDiscrete, constant, time-invariant field.\n\nThis field is constant in both spatial direction and time direction, i.e. df/dX = 0 and df/dt = 0.\n\nExample\n\njulia> DCTI(1)\nFEMBase.DCTI{Int64}(1)\n\n\n\n"
 },
 
@@ -164,7 +164,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.DVTI",
     "page": "Fields",
     "title": "FEMBase.DVTI",
-    "category": "Type",
+    "category": "type",
     "text": "DVTI{N,T} <: AbstractField\n\nDiscrete, variable, time-invariant field.\n\nThis is constant in time direction, but not in spatial direction, i.e. df/dt = 0 but df/dX != 0. The basic structure of data is Tuple, and it is implicitly assumed that length of field matches to the number of shape functions, so that interpolation in spatial direction works.\n\nExample\n\njulia> DVTI(1, 2, 3)\nFEMBase.DVTI{3,Int64}((1, 2, 3))\n\n\n\n"
 },
 
@@ -172,7 +172,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.DCTV",
     "page": "Fields",
     "title": "FEMBase.DCTV",
-    "category": "Type",
+    "category": "type",
     "text": "DCTV{T} <: AbstractField\n\nDiscrete, constant, time variant field. This type of field can change in time direction but not in spatial direction.\n\nExample\n\nField having value 5 at time 0.0 and value 10 at time 1.0:\n\njulia> DCTV(0.0 => 5, 1.0 => 10)\nFEMBase.DCTV{Int64}(Pair{Float64,Int64}[0.0=>5, 1.0=>10])\n\n\n\n"
 },
 
@@ -180,7 +180,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.DVTV",
     "page": "Fields",
     "title": "FEMBase.DVTV",
-    "category": "Type",
+    "category": "type",
     "text": "DVTV{N,T} <: AbstractField\n\nDiscrete, variable, time variant field. The most general discrete field can change in both temporal and spatial direction.\n\nExample\n\njulia> DVTV(0.0 => (1, 2), 1.0 => (2, 3))\nFEMBase.DVTV{2,Int64}(Pair{Float64,Tuple{Int64,Int64}}[0.0=>(1, 2), 1.0=>(2, 3)])\n\n\n\n"
 },
 
@@ -188,7 +188,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.CVTV",
     "page": "Fields",
     "title": "FEMBase.CVTV",
-    "category": "Type",
+    "category": "type",
     "text": "CVTV <: AbstractField\n\nContinuous, variable, time variant field.\n\nExample\n\njulia> f = CVTV((xi,t) -> xi*t)\nFEMBase.CVTV(#1)\n\n\n\n"
 },
 
@@ -196,7 +196,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.DVTId",
     "page": "Fields",
     "title": "FEMBase.DVTId",
-    "category": "Type",
+    "category": "type",
     "text": "DVTId(X::Dict)\n\nDiscrete, variable, time invariant dictionary field.\n\n\n\n"
 },
 
@@ -204,7 +204,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.DVTVd",
     "page": "Fields",
     "title": "FEMBase.DVTVd",
-    "category": "Type",
+    "category": "type",
     "text": "DVTVd(time => data::Dict)\n\nDiscrete, variable, time variant dictionary field.\n\n\n\n"
 },
 
@@ -228,7 +228,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.field-Tuple{Any}",
     "page": "Fields",
     "title": "FEMBase.field",
-    "category": "Method",
+    "category": "method",
     "text": "field(x)\n\nCreate new field. Field type is deduced from data type.\n\n\n\n"
 },
 
@@ -236,7 +236,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBase.update!-Union{Tuple{F,Any}, Tuple{F}} where F<:FEMBase.AbstractField",
     "page": "Fields",
     "title": "FEMBase.update!",
-    "category": "Method",
+    "category": "method",
     "text": "update!(field, data)\n\nUpdate new value to field.\n\n\n\n"
 },
 
@@ -244,7 +244,7 @@ var documenterSearchIndex = {"docs": [
     "location": "FEMBase/fields.html#FEMBasis.interpolate-Union{Tuple{F,Any}, Tuple{F}} where F<:FEMBase.AbstractField",
     "page": "Fields",
     "title": "FEMBasis.interpolate",
-    "category": "Method",
+    "category": "method",
     "text": "interpolate(field, time)\n\nInterpolate field in time direction.\n\nExamples\n\nFor time invariant fields DCTI, DVTI, DVTId solution is trivially the data inside field as fields does not depend from the time:\n\njulia> a = field(1.0)\nFEMBase.DCTI{Float64}(1.0)\n\njulia> interpolate(a, 0.0)\n1.0\n\njulia> a = field((1.0, 2.0))\nFEMBase.DVTI{2,Float64}((1.0, 2.0))\n\njulia> interpolate(a, 0.0)\n(1.0, 2.0)\n\njulia> a = field(1=>1.0, 2=>2.0)\nFEMBase.DVTId{Float64}(Dict(2=>2.0,1=>1.0))\n\njulia> interpolate(a, 0.0)\nDict{Int64,Float64} with 2 entries:\n  2 => 2.0\n  1 => 1.0\n\nDVTId trivial solution is returned. For time variant fields DCTV, DVTV, DVTVd linear interpolation is performed.\n\nOther notes\n\nFirst algorithm checks that is time out of range, i.e. time is smaller than time of first frame or larger than last frame. If that is the case, return first or last frame. Secondly algorithm finds is given time exact match to time of some frame and return that frame. At last, we find correct bin so that t0 < time < t1 and use linear interpolation.\n\n\n\n"
 },
 
