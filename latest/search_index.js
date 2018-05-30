@@ -33,7 +33,47 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/mesh.html#",
+    "location": "examples/2d_hertz_contact.html#",
+    "page": "2D Hertz contact problem",
+    "title": "2D Hertz contact problem",
+    "category": "page",
+    "text": "EditURL = \"https://github.com/JuliaFEM/JuliaFEM.jl/blob/master/examples/2d_hertz_contact.jl\""
+},
+
+{
+    "location": "examples/2d_hertz_contact.html#D-Hertz-contact-problem-1",
+    "page": "2D Hertz contact problem",
+    "title": "2D Hertz contact problem",
+    "category": "section",
+    "text": "(Image: )In the example, a cylinder is pressed agains block with a force of 35 kN. A similar example can be found from NAFEMS report FENET D3613 (advanced finite element contact benchmarks).Solution for maximum pressure p_0 and contact radius a is  p_0 = sqrtfracFE2pi R \n  a     = sqrtfrac8FRpi Ewhere  E = frac2E_1E_2E_2left(1-nu_1^2right)+E_1left(1-nu_2^2right)Substituting values, one gets accurate solution to be p_0 = 3585 mathrmMPa and a = 621 mathrmmm.using JuliaFEM\nusing JuliaFEM.Preprocess\nusing JuliaFEM.Postprocess\nusing Logging\nLogging.configure(level=INFO)\nadd_elements! = JuliaFEM.add_elements!Simulation starts by reading the mesh. Model is constructed and meshed using SALOME, thus mesh format is .med. Mesh type is quite simple structure, containing things like mesh.nodes, mesh.elements and so on. Keep on mind, that Mesh contains only standard Julia types and we think it as a structure helping us to construct elements needed in simulation. In principle, we don\'t need to use Mesh in simulation anyway if we figure some other way to define the geometry for elements.datadir = Pkg.dir(\"JuliaFEM\", \"examples\", \"2d_hertz_contact\")\nmeshfile = joinpath(datadir, \"hertz_2d_full.med\")\nmesh = aster_read_mesh(meshfile)\nfor (elset_name, element_ids) in mesh.element_sets\n    nel = length(element_ids)\n    println(\"Element set $elset_name contains $nel elements.\")\nend\nfor (nset_name, node_ids) in mesh.node_sets\n    nno = length(node_ids)\n    println(\"Node set $nset_name contains $nno nodes.\")\nend\nnnodes = length(mesh.nodes)\nprintln(\"Total number of nodes in mesh: $nnodes\")\nnelements = length(mesh.elements)\nprintln(\"Total number of elements in mesh: $nelements\")Next, define two bodies. Technically, we could have only one problem and add elements from both bodies to the same problem, but defining two different problems is recommended for clarity. Plain strain assumption is used. To make clear what is happening here: we first create a set of elements (elements are in vector called upper_elements), then we define new problem which type is Elasticity, give it some meaningful name (this time cylinder), and last value 2 means that problems does have two degrees of freedom per node.upper_elements = create_elements(mesh, \"CYLINDER\")\nupdate!(upper_elements, \"youngs modulus\", 70.0e3)\nupdate!(upper_elements, \"poissons ratio\", 0.3)\nupper = Problem(Elasticity, \"cylinder\", 2)\nupper.properties.formulation = :plane_strain\nadd_elements!(upper, upper_elements)\n\nlower_elements = create_elements(mesh, \"BLOCK\")\nupdate!(lower_elements, \"youngs modulus\", 210.0e3)\nupdate!(lower_elements, \"poissons ratio\", 0.3)\nlower = Problem(Elasticity, \"block\", 2)\nlower.properties.formulation = :plane_strain\nadd_elements!(lower, lower_elements)Next we define some boundary conditions: creating \"boundary\" problems goes in the same way than defining \"field\" problems, the only difference is that we add extra argument giving what field are we tring to fix. This time, we have 2 dofs / node and we fix displacement in direction 2.bc_fixed_elements = create_elements(mesh, \"FIXED\")\nupdate!(bc_fixed_elements, \"displacement 2\", 0.0)\nbc_fixed = Problem(Dirichlet, \"fixed\", 2, \"displacement\")\nadd_elements!(bc_fixed, bc_fixed_elements)Defining symmetry boundary condition goes with the same ideabc_sym_23_elements = create_elements(mesh, \"SYM23\")\nupdate!(bc_sym_23_elements, \"displacement 1\", 0.0)\nbc_sym_23 = Problem(Dirichlet, \"symmetry line 23\", 2, \"displacement\")\nadd_elements!(bc_sym_23, bc_sym_23_elements)Next we define point load. To define that, we first need to find some node near the top of cylinder, using function find_nearest_node. Then we create a new problem, again of type Elasticity. Like told already, we don\'t need to use Mesh if we have some other procedure to define the geometry of the element (and it\'s connectivity, of course). So we can directly create an element of type Poi1, meaning 1-node point element, update it\'s geometry and apply 35.0e3 kN load in negative y-direction:nid = find_nearest_node(mesh, [0.0, 100.0])\nload = Problem(Elasticity, \"point load\", 2)\nload.properties.formulation = :plane_strain\nload.elements = [Element(Poi1, [nid])]\nupdate!(load.elements, \"geometry\", mesh.nodes)\nupdate!(load.elements, \"displacement traction force 2\", -35.0e3)Next, we define another boudary problem, this time the type of problem is Contact2D, which is a mortar contact formulation for two dimensions. Elements are added using add_slave_elements! and add_master_elements!. Problems, in general, can have some properties defined, like the formulation in Elasticity (we also have :plane_stress). For contact, we need to swap normal direction for meshes created by SALOME because in Code Aster, element orientation is defined opposite to what is used in ABAQUS, and in JuliaFEM in general we follow the same conventions what are used in ABAQUS.contact = Problem(Contact2D, \"contact\", 2, \"displacement\")\ncontact.properties.rotate_normals = true\ncontact_slave_elements = create_elements(mesh, \"BLOCK_TO_CYLINDER\")\ncontact_master_elements = create_elements(mesh, \"CYLINDER_TO_BLOCK\")\nadd_master_elements!(contact, contact_master_elements)\nadd_slave_elements!(contact, contact_slave_elements)After all problems are defined, we define some Analysis, which can be e.g. static analysis, dynamic analysis, modal analysis, linear perturbation analysis and so on. Here, the analysis type is Nonlinear, which is nonlinear quasistatic analysis. In the same manner as we do add_elements! to add elements to Problem, we use add_problems! to add problems to analysis. Because we are not restricted to some particular input and output formats, we \"connect\" a ResultsWriter to our analysis, this time we want to visualize results using ParaView, thus we write our results to Xdmf format, which uses well defined standards XML and HDF to store model data.step = Analysis(Nonlinear)\nadd_problems!(step, [upper, lower, bc_fixed, bc_sym_23, load, contact])\nxdmf = Xdmf(\"2d_hertz_results\"; overwrite=true)\n# todo for 2d\n# for body in (upper, lower)\n#     push!(body.postprocess_fields, \"stress\")\n# end\nadd_results_writer!(step, xdmf)In last part, we run the analysis.step()"
+},
+
+{
+    "location": "examples/2d_hertz_contact.html#Results-1",
+    "page": "2D Hertz contact problem",
+    "title": "Results",
+    "category": "section",
+    "text": "Results are stored in 2d_hertz_results.xmf and 2d_hertz_results.h5 for visual inspection. We can also postprocess results programmatically because we are inside a real scripting / programming environment all the time.  For example, we can integrate the resultant force in normal and tangential direction in contact surface to validate our result.Rn = 0.0\nRt = 0.0\ntime = 0.0\nfor sel in contact_slave_elements\n    for ip in get_integration_points(sel)\n        w = ip.weight*sel(ip, time, Val{:detJ})\n        n = sel(\"normal\", ip, time)\n        t = sel(\"tangent\", ip, time)\n        la = sel(\"lambda\", ip, time)\n        Rn += w*dot(n, la)\n        Rt += w*dot(t, la)\n    end\nend\n\nprintln(\"2d hertz contact resultant forces: Rn = $Rn, Rt = $Rt\")\n\nusing Base.Test\n@test isapprox(Rn, 35.0e3)\n@test isapprox(Rt, 0.0)Visualization of the results can be done using ParaView: (Image: )For optimization loops, we want to programmatically find, for example, maximum contact pressure. We can, for example, get all the values in nodes:lambda = contact(\"lambda\", time)\nnormal = contact(\"normal\", time)\np0 = 0.0\np0_acc = 3585.0\nfor (nid, n) in normal\n    lan = dot(n, lambda[nid])\n    println(\"$nid => $lan\")\n    p0 = max(p0, lan)\nend\np0 = round(p0, 2)\nrtol = round(norm(p0-p0_acc)/max(p0,p0_acc)*100, 2)\nprintln(\"Maximum contact pressure p0 = $p0, p0_acc = $p0_acc, rtol = $rtol %\")To get rough approximation where does the contact open, we can find the element from slave contact surface, where contact pressure is zero in the other node and something nonzero in the other node.a_rad = 0.0\nfor element in contact_slave_elements\n    la1, la2 = element(\"lambda\", time)\n    p1, p2 = norm(la1), norm(la2)\n    a, b = isapprox(p1, 0.0), isapprox(p2, 0.0)\n    if (a && !b) || (b && !a)\n        X1, X2 = element(\"geometry\", time)\n        println(\"Contact opening element geometry: X1 = $X1, X2 = $X2\")\n        println(\"Contact opening element lambda: la1 = $la1, la2 = $la2\")\n        x11, y11 = X1\n        x12, y12 = X2\n        a_rad = 1/2*abs(x11+x12)\n        break\n    end\nend\nprintln(\"Contact radius: $a_rad\")This example briefly described some of the core features of JuliaFEM.close(xdmf.hdf) # srcThis page was generated using Literate.jl."
+},
+
+{
+    "location": "examples/generate_stiffness_matrices.html#",
+    "page": "Generating local matrices for problems",
+    "title": "Generating local matrices for problems",
+    "category": "page",
+    "text": "EditURL = \"https://github.com/JuliaFEM/JuliaFEM.jl/blob/master/examples/generate_stiffness_matrices.jl\""
+},
+
+{
+    "location": "examples/generate_stiffness_matrices.html#Generating-local-matrices-for-problems-1",
+    "page": "Generating local matrices for problems",
+    "title": "Generating local matrices for problems",
+    "category": "section",
+    "text": "using JuliaFEMPlane stress Quad4 element with linear material model:X = Dict(1 => [0.0, 0.0], 2 => [2.0, 0.0], 3 => [2.0, 2.0], 4 => [0.0, 2.0])\nelement = Element(Quad4, [1, 2, 3, 4])\nupdate!(element, \"geometry\", X)\nupdate!(element, \"youngs modulus\", 288.0)\nupdate!(element, \"poissons ratio\", 1/3)\nproblem = Problem(Elasticity, \"test problem\", 2)\nproblem.properties.formulation = :plane_stress\nadd_elements!(problem, [element])\nassemble!(problem, 0.0)\nK = round.(full(problem.assembly.K), 5)This page was generated using Literate.jl."
+},
+
+{
+    "location": "packages/FEMBase/mesh.html#",
     "page": "Mesh",
     "title": "Mesh",
     "category": "page",
@@ -41,7 +81,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/mesh.html#Mesh-1",
+    "location": "packages/FEMBase/mesh.html#Mesh-1",
     "page": "Mesh",
     "title": "Mesh",
     "category": "section",
@@ -49,7 +89,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/mesh.html#Mesh-structure-1",
+    "location": "packages/FEMBase/mesh.html#Mesh-structure-1",
     "page": "Mesh",
     "title": "Mesh structure",
     "category": "section",
@@ -57,7 +97,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/mesh.html#Modifying-mesh-1",
+    "location": "packages/FEMBase/mesh.html#Modifying-mesh-1",
     "page": "Mesh",
     "title": "Modifying mesh",
     "category": "section",
@@ -65,7 +105,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/mesh.html#Defining-new-mesh-parsers-1",
+    "location": "packages/FEMBase/mesh.html#Defining-new-mesh-parsers-1",
     "page": "Mesh",
     "title": "Defining new mesh parsers",
     "category": "section",
@@ -73,7 +113,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#",
+    "location": "packages/FEMBase/fields.html#",
     "page": "Fields",
     "title": "Fields",
     "category": "page",
@@ -81,7 +121,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Fields-1",
+    "location": "packages/FEMBase/fields.html#Fields-1",
     "page": "Fields",
     "title": "Fields",
     "category": "section",
@@ -89,7 +129,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Creating-new-fields-1",
+    "location": "packages/FEMBase/fields.html#Creating-new-fields-1",
     "page": "Fields",
     "title": "Creating new fields",
     "category": "section",
@@ -97,7 +137,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Accessing-fields-1",
+    "location": "packages/FEMBase/fields.html#Accessing-fields-1",
     "page": "Fields",
     "title": "Accessing fields",
     "category": "section",
@@ -105,7 +145,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Continuous-fields-1",
+    "location": "packages/FEMBase/fields.html#Continuous-fields-1",
     "page": "Fields",
     "title": "Continuous fields",
     "category": "section",
@@ -113,7 +153,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Dictionary-fields-1",
+    "location": "packages/FEMBase/fields.html#Dictionary-fields-1",
     "page": "Fields",
     "title": "Dictionary fields",
     "category": "section",
@@ -121,7 +161,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Using-common-constructor-field-1",
+    "location": "packages/FEMBase/fields.html#Using-common-constructor-field-1",
     "page": "Fields",
     "title": "Using common constructor field",
     "category": "section",
@@ -129,7 +169,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Developing-new-fields-1",
+    "location": "packages/FEMBase/fields.html#Developing-new-fields-1",
     "page": "Fields",
     "title": "Developing new fields",
     "category": "section",
@@ -137,7 +177,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Functions-and-types-related-to-fields-1",
+    "location": "packages/FEMBase/fields.html#Functions-and-types-related-to-fields-1",
     "page": "Fields",
     "title": "Functions and types related to fields",
     "category": "section",
@@ -145,7 +185,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.AbstractField",
+    "location": "packages/FEMBase/fields.html#FEMBase.AbstractField",
     "page": "Fields",
     "title": "FEMBase.AbstractField",
     "category": "type",
@@ -153,7 +193,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.DCTI",
+    "location": "packages/FEMBase/fields.html#FEMBase.DCTI",
     "page": "Fields",
     "title": "FEMBase.DCTI",
     "category": "type",
@@ -161,7 +201,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.DVTI",
+    "location": "packages/FEMBase/fields.html#FEMBase.DVTI",
     "page": "Fields",
     "title": "FEMBase.DVTI",
     "category": "type",
@@ -169,7 +209,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.DCTV",
+    "location": "packages/FEMBase/fields.html#FEMBase.DCTV",
     "page": "Fields",
     "title": "FEMBase.DCTV",
     "category": "type",
@@ -177,7 +217,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.DVTV",
+    "location": "packages/FEMBase/fields.html#FEMBase.DVTV",
     "page": "Fields",
     "title": "FEMBase.DVTV",
     "category": "type",
@@ -185,7 +225,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.CVTV",
+    "location": "packages/FEMBase/fields.html#FEMBase.CVTV",
     "page": "Fields",
     "title": "FEMBase.CVTV",
     "category": "type",
@@ -193,7 +233,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.DVTId",
+    "location": "packages/FEMBase/fields.html#FEMBase.DVTId",
     "page": "Fields",
     "title": "FEMBase.DVTId",
     "category": "type",
@@ -201,7 +241,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.DVTVd",
+    "location": "packages/FEMBase/fields.html#FEMBase.DVTVd",
     "page": "Fields",
     "title": "FEMBase.DVTVd",
     "category": "type",
@@ -209,7 +249,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Types-1",
+    "location": "packages/FEMBase/fields.html#Types-1",
     "page": "Fields",
     "title": "Types",
     "category": "section",
@@ -217,7 +257,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Functions-(internal)-1",
+    "location": "packages/FEMBase/fields.html#Functions-(internal)-1",
     "page": "Fields",
     "title": "Functions (internal)",
     "category": "section",
@@ -225,7 +265,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.field-Tuple{Any}",
+    "location": "packages/FEMBase/fields.html#FEMBase.field-Tuple{Any}",
     "page": "Fields",
     "title": "FEMBase.field",
     "category": "method",
@@ -233,7 +273,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBase.update!-Union{Tuple{F,Any}, Tuple{F}} where F<:FEMBase.AbstractField",
+    "location": "packages/FEMBase/fields.html#FEMBase.update!-Union{Tuple{F,Any}, Tuple{F}} where F<:FEMBase.AbstractField",
     "page": "Fields",
     "title": "FEMBase.update!",
     "category": "method",
@@ -241,7 +281,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#FEMBasis.interpolate-Union{Tuple{F,Any}, Tuple{F}} where F<:FEMBase.AbstractField",
+    "location": "packages/FEMBase/fields.html#FEMBasis.interpolate-Union{Tuple{F,Any}, Tuple{F}} where F<:FEMBase.AbstractField",
     "page": "Fields",
     "title": "FEMBasis.interpolate",
     "category": "method",
@@ -249,7 +289,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/fields.html#Functions-(public)-1",
+    "location": "packages/FEMBase/fields.html#Functions-(public)-1",
     "page": "Fields",
     "title": "Functions (public)",
     "category": "section",
@@ -257,7 +297,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/basis.html#",
+    "location": "packages/FEMBase/basis.html#",
     "page": "Basis functions",
     "title": "Basis functions",
     "category": "page",
@@ -265,7 +305,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/basis.html#Basis-functions-1",
+    "location": "packages/FEMBase/basis.html#Basis-functions-1",
     "page": "Basis functions",
     "title": "Basis functions",
     "category": "section",
@@ -273,7 +313,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/basis.html#Mathematics-1",
+    "location": "packages/FEMBase/basis.html#Mathematics-1",
     "page": "Basis functions",
     "title": "Mathematics",
     "category": "section",
@@ -281,7 +321,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/basis.html#Defining-custom-shape-functions-1",
+    "location": "packages/FEMBase/basis.html#Defining-custom-shape-functions-1",
     "page": "Basis functions",
     "title": "Defining custom shape functions",
     "category": "section",
@@ -289,7 +329,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/integration.html#",
+    "location": "packages/FEMBase/integration.html#",
     "page": "Integration",
     "title": "Integration",
     "category": "page",
@@ -297,7 +337,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/integration.html#Integration-1",
+    "location": "packages/FEMBase/integration.html#Integration-1",
     "page": "Integration",
     "title": "Integration",
     "category": "section",
@@ -305,7 +345,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/elements.html#",
+    "location": "packages/FEMBase/elements.html#",
     "page": "Elements",
     "title": "Elements",
     "category": "page",
@@ -313,7 +353,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/elements.html#Elements-1",
+    "location": "packages/FEMBase/elements.html#Elements-1",
     "page": "Elements",
     "title": "Elements",
     "category": "section",
@@ -321,7 +361,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/elements.html#Using-analytical-fields-1",
+    "location": "packages/FEMBase/elements.html#Using-analytical-fields-1",
     "page": "Elements",
     "title": "Using analytical fields",
     "category": "section",
@@ -329,7 +369,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/elements.html#Creating-fields-depending-from-other-fields-1",
+    "location": "packages/FEMBase/elements.html#Creating-fields-depending-from-other-fields-1",
     "page": "Elements",
     "title": "Creating fields depending from other fields",
     "category": "section",
@@ -337,7 +377,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#",
+    "location": "packages/FEMBase/problems.html#",
     "page": "Problems",
     "title": "Problems",
     "category": "page",
@@ -345,7 +385,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#Problems-1",
+    "location": "packages/FEMBase/problems.html#Problems-1",
     "page": "Problems",
     "title": "Problems",
     "category": "section",
@@ -353,7 +393,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#Discretizing-field-problem-1",
+    "location": "packages/FEMBase/problems.html#Discretizing-field-problem-1",
     "page": "Problems",
     "title": "Discretizing field problem",
     "category": "section",
@@ -361,7 +401,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#Setting-and-getting-global-degrees-of-freedom-for-element-1",
+    "location": "packages/FEMBase/problems.html#Setting-and-getting-global-degrees-of-freedom-for-element-1",
     "page": "Problems",
     "title": "Setting and getting global degrees of freedom for element",
     "category": "section",
@@ -369,7 +409,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#Discretizing-boundary-problem-1",
+    "location": "packages/FEMBase/problems.html#Discretizing-boundary-problem-1",
     "page": "Problems",
     "title": "Discretizing boundary problem",
     "category": "section",
@@ -377,7 +417,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#Assembling-mass-matrices-1",
+    "location": "packages/FEMBase/problems.html#Assembling-mass-matrices-1",
     "page": "Problems",
     "title": "Assembling mass matrices",
     "category": "section",
@@ -385,7 +425,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#Using-problem-wide-fields-1",
+    "location": "packages/FEMBase/problems.html#Using-problem-wide-fields-1",
     "page": "Problems",
     "title": "Using problem-wide fields",
     "category": "section",
@@ -393,7 +433,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#Discretizing-mixed-problems-1",
+    "location": "packages/FEMBase/problems.html#Discretizing-mixed-problems-1",
     "page": "Problems",
     "title": "Discretizing mixed problems",
     "category": "section",
@@ -401,7 +441,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/problems.html#Using-automatic-differentiation-to-linearize-non-linear-problem-1",
+    "location": "packages/FEMBase/problems.html#Using-automatic-differentiation-to-linearize-non-linear-problem-1",
     "page": "Problems",
     "title": "Using automatic differentiation to linearize non-linear problem",
     "category": "section",
@@ -409,7 +449,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/solvers.html#",
+    "location": "packages/FEMBase/solvers.html#",
     "page": "Analyses and solvers",
     "title": "Analyses and solvers",
     "category": "page",
@@ -417,7 +457,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/solvers.html#Analyses-and-solvers-1",
+    "location": "packages/FEMBase/solvers.html#Analyses-and-solvers-1",
     "page": "Analyses and solvers",
     "title": "Analyses and solvers",
     "category": "section",
@@ -425,7 +465,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/solvers.html#Implementing-solver-for-LinearSystem-1",
+    "location": "packages/FEMBase/solvers.html#Implementing-solver-for-LinearSystem-1",
     "page": "Analyses and solvers",
     "title": "Implementing solver for LinearSystem",
     "category": "section",
@@ -433,7 +473,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/solvers.html#Implementing-new-analyses-1",
+    "location": "packages/FEMBase/solvers.html#Implementing-new-analyses-1",
     "page": "Analyses and solvers",
     "title": "Implementing new analyses",
     "category": "section",
@@ -441,7 +481,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/postprocessing.html#",
+    "location": "packages/FEMBase/postprocessing.html#",
     "page": "Postprocessing",
     "title": "Postprocessing",
     "category": "page",
@@ -449,7 +489,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/postprocessing.html#Postprocessing-1",
+    "location": "packages/FEMBase/postprocessing.html#Postprocessing-1",
     "page": "Postprocessing",
     "title": "Postprocessing",
     "category": "section",
@@ -457,7 +497,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/results.html#",
+    "location": "packages/FEMBase/results.html#",
     "page": "Results",
     "title": "Results",
     "category": "page",
@@ -465,7 +505,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/results.html#Results-1",
+    "location": "packages/FEMBase/results.html#Results-1",
     "page": "Results",
     "title": "Results",
     "category": "section",
@@ -473,7 +513,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/materials.html#",
+    "location": "packages/FEMBase/materials.html#",
     "page": "Materials",
     "title": "Materials",
     "category": "page",
@@ -481,7 +521,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMBase/materials.html#Materials-1",
+    "location": "packages/FEMBase/materials.html#Materials-1",
     "page": "Materials",
     "title": "Materials",
     "category": "section",
@@ -489,7 +529,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#",
+    "location": "packages/FEMQuad/index.html#",
     "page": "FEMQuad.jl documentation",
     "title": "FEMQuad.jl documentation",
     "category": "page",
@@ -497,7 +537,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#FEMQuad.jl-documentation-1",
+    "location": "packages/FEMQuad/index.html#FEMQuad.jl-documentation-1",
     "page": "FEMQuad.jl documentation",
     "title": "FEMQuad.jl documentation",
     "category": "section",
@@ -505,7 +545,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Functions-1",
+    "location": "packages/FEMQuad/index.html#Functions-1",
     "page": "FEMQuad.jl documentation",
     "title": "Functions",
     "category": "section",
@@ -513,7 +553,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Gauss-Legendre-rules-in-segments-1",
+    "location": "packages/FEMQuad/index.html#Gauss-Legendre-rules-in-segments-1",
     "page": "FEMQuad.jl documentation",
     "title": "Gauss-Legendre rules in segments",
     "category": "section",
@@ -521,7 +561,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Gauss-Legendre-rules-in-triangles-1",
+    "location": "packages/FEMQuad/index.html#Gauss-Legendre-rules-in-triangles-1",
     "page": "FEMQuad.jl documentation",
     "title": "Gauss-Legendre rules in triangles",
     "category": "section",
@@ -529,7 +569,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Gauss-Legendre-rules-in-quadrangles-1",
+    "location": "packages/FEMQuad/index.html#Gauss-Legendre-rules-in-quadrangles-1",
     "page": "FEMQuad.jl documentation",
     "title": "Gauss-Legendre rules in quadrangles",
     "category": "section",
@@ -537,7 +577,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Gauss-Legendre-rules-in-tetrahedrons-1",
+    "location": "packages/FEMQuad/index.html#Gauss-Legendre-rules-in-tetrahedrons-1",
     "page": "FEMQuad.jl documentation",
     "title": "Gauss-Legendre rules in tetrahedrons",
     "category": "section",
@@ -545,7 +585,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Gauss-Legendre-rules-in-hexahedrons-1",
+    "location": "packages/FEMQuad/index.html#Gauss-Legendre-rules-in-hexahedrons-1",
     "page": "FEMQuad.jl documentation",
     "title": "Gauss-Legendre rules in hexahedrons",
     "category": "section",
@@ -553,7 +593,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Gauss-Legendre-rules-in-prismatic-domain-1",
+    "location": "packages/FEMQuad/index.html#Gauss-Legendre-rules-in-prismatic-domain-1",
     "page": "FEMQuad.jl documentation",
     "title": "Gauss-Legendre rules in prismatic domain",
     "category": "section",
@@ -561,7 +601,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Gauss-Legendre-rules-in-pyramidal-domains-1",
+    "location": "packages/FEMQuad/index.html#Gauss-Legendre-rules-in-pyramidal-domains-1",
     "page": "FEMQuad.jl documentation",
     "title": "Gauss-Legendre rules in pyramidal domains",
     "category": "section",
@@ -569,7 +609,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "FEMQuad/index.html#Index-1",
+    "location": "packages/FEMQuad/index.html#Index-1",
     "page": "FEMQuad.jl documentation",
     "title": "Index",
     "category": "section",
@@ -577,7 +617,87 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "HeatTransfer/index.html#",
+    "location": "packages/AsterReader/index.html#",
+    "page": "AsterReader.jl documentation",
+    "title": "AsterReader.jl documentation",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "packages/AsterReader/index.html#AsterReader.jl-documentation-1",
+    "page": "AsterReader.jl documentation",
+    "title": "AsterReader.jl documentation",
+    "category": "section",
+    "text": "DocTestSetup = quote\n    using AsterReader\nend"
+},
+
+{
+    "location": "packages/AsterReader/index.html#Exported-functions-1",
+    "page": "AsterReader.jl documentation",
+    "title": "Exported functions",
+    "category": "section",
+    "text": "aster_read_mesh"
+},
+
+{
+    "location": "packages/AsterReader/index.html#Internal-functions-1",
+    "page": "AsterReader.jl documentation",
+    "title": "Internal functions",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/AsterReader/index.html#Index-1",
+    "page": "AsterReader.jl documentation",
+    "title": "Index",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/AbaqusReader/index.html#",
+    "page": "AbaqusReader.jl documentation",
+    "title": "AbaqusReader.jl documentation",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "packages/AbaqusReader/index.html#AbaqusReader.jl-documentation-1",
+    "page": "AbaqusReader.jl documentation",
+    "title": "AbaqusReader.jl documentation",
+    "category": "section",
+    "text": "DocTestSetup = quote\n    using AbaqusReader\nend"
+},
+
+{
+    "location": "packages/AbaqusReader/index.html#Exported-functions-1",
+    "page": "AbaqusReader.jl documentation",
+    "title": "Exported functions",
+    "category": "section",
+    "text": "AbaqusReader.abaqus_read_mesh\nAbaqusReader.abaqus_read_model\nAbaqusReader.create_surface_elements"
+},
+
+{
+    "location": "packages/AbaqusReader/index.html#Internal-functions-1",
+    "page": "AbaqusReader.jl documentation",
+    "title": "Internal functions",
+    "category": "section",
+    "text": "AbaqusReader.parse_definition(definition)\nAbaqusReader.parse_section\nAbaqusReader.regex_match\nAbaqusReader.add_set!\nAbaqusReader.consumeList\nAbaqusReader.parse_numbers\nAbaqusReader.register_abaqus_keyword\nAbaqusReader.is_abaqus_keyword_registered\nAbaqusReader.element_mapping\nAbaqusReader.find_keywords\nAbaqusReader.matchset\nAbaqusReader.empty_or_comment_line\nAbaqusReader.create_surface_element\nAbaqusReader.parse_abaqus"
+},
+
+{
+    "location": "packages/AbaqusReader/index.html#Index-1",
+    "page": "AbaqusReader.jl documentation",
+    "title": "Index",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/HeatTransfer/index.html#",
     "page": "HeatTransfer.jl",
     "title": "HeatTransfer.jl",
     "category": "page",
@@ -585,7 +705,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "HeatTransfer/index.html#HeatTransfer.jl-1",
+    "location": "packages/HeatTransfer/index.html#HeatTransfer.jl-1",
     "page": "HeatTransfer.jl",
     "title": "HeatTransfer.jl",
     "category": "section",
@@ -593,7 +713,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "HeatTransfer/index.html#Theory-1",
+    "location": "packages/HeatTransfer/index.html#Theory-1",
     "page": "HeatTransfer.jl",
     "title": "Theory",
     "category": "section",
@@ -601,7 +721,7 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "HeatTransfer/index.html#Features-1",
+    "location": "packages/HeatTransfer/index.html#Features-1",
     "page": "HeatTransfer.jl",
     "title": "Features",
     "category": "section",
@@ -609,11 +729,91 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "HeatTransfer/index.html#References-1",
+    "location": "packages/HeatTransfer/index.html#References-1",
     "page": "HeatTransfer.jl",
     "title": "References",
     "category": "section",
     "text": "Heat equation. (2018, January 5). In Wikipedia, The Free Encyclopedia. Retrieved 00:49, January 30, 2018, from https://en.wikipedia.org/w/index.php?title=Heat_equation&oldid=818847673\nHeat transfer. (2018, January 26). In Wikipedia, The Free Encyclopedia. Retrieved 00:48, January 30, 2018, from https://en.wikipedia.org/w/index.php?title=Heat_transfer&oldid=822415173"
+},
+
+{
+    "location": "packages/MortarContact2D/index.html#",
+    "page": "MortarContact2D.jl",
+    "title": "MortarContact2D.jl",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "packages/MortarContact2D/index.html#MortarContact2D.jl-1",
+    "page": "MortarContact2D.jl",
+    "title": "MortarContact2D.jl",
+    "category": "section",
+    "text": "MortarContact2D.jl extends JuliaFEM functionalities to solve plane solid mechanics problems including contacts. Module is partially build on top of earlier module Mortar2D.jl."
+},
+
+{
+    "location": "packages/MortarContact2D/index.html#Theory-1",
+    "page": "MortarContact2D.jl",
+    "title": "Theory",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/MortarContact2D/index.html#Features-1",
+    "page": "MortarContact2D.jl",
+    "title": "Features",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/MortarContact2D/index.html#References-1",
+    "page": "MortarContact2D.jl",
+    "title": "References",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/MortarContact2DAD/index.html#",
+    "page": "MortarContact2DAD.jl",
+    "title": "MortarContact2DAD.jl",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "packages/MortarContact2DAD/index.html#MortarContact2DAD.jl-1",
+    "page": "MortarContact2DAD.jl",
+    "title": "MortarContact2DAD.jl",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/MortarContact2DAD/index.html#Theory-1",
+    "page": "MortarContact2DAD.jl",
+    "title": "Theory",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/MortarContact2DAD/index.html#Features-1",
+    "page": "MortarContact2DAD.jl",
+    "title": "Features",
+    "category": "section",
+    "text": ""
+},
+
+{
+    "location": "packages/MortarContact2DAD/index.html#References-1",
+    "page": "MortarContact2DAD.jl",
+    "title": "References",
+    "category": "section",
+    "text": ""
 },
 
 ]}
