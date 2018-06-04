@@ -57,6 +57,22 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "examples/3d_frame.html#",
+    "page": "Natural frequency analysis of 3d frame structure",
+    "title": "Natural frequency analysis of 3d frame structure",
+    "category": "page",
+    "text": "EditURL = \"https://github.com/JuliaFEM/JuliaFEM.jl/blob/master/examples/3d_frame.jl\""
+},
+
+{
+    "location": "examples/3d_frame.html#Natural-frequency-analysis-of-3d-frame-structure-1",
+    "page": "Natural frequency analysis of 3d frame structure",
+    "title": "Natural frequency analysis of 3d frame structure",
+    "category": "section",
+    "text": "For general information about Euler-Bernoulli beam theory, see this wikipedia page.The model is a 3d frame, shown in picture.(Image: )using JuliaFEM\nusing JuliaFEM.Preprocess\nusing FEMBase.Test\nusing Logging\nLogging.configure(level=INFO)\nadd_elements! = JuliaFEM.add_elements!Reading meshdatadir = Pkg.dir(\"JuliaFEM\", \"examples\", \"3d_frame\")\nmesh = aster_read_mesh(joinpath(datadir, \"model.med\"))\nprintln(\"Number of nodes in a model: \", length(mesh.nodes))Create beam elements. For 3d model, we need to define at least Young\'s modulus, shear modulus, density cross-section area, moment of inertia in local coordinate system and polar moment of inertia.beam_elements = create_elements(mesh, \"FRAME\")\ninfo(\"Number of elements: \", length(beam_elements))\nupdate!(beam_elements, \"youngs modulus\", 210.0e6)\nupdate!(beam_elements, \"shear modulus\", 84.0e6)\nupdate!(beam_elements, \"density\", 7850.0e-3)\nupdate!(beam_elements, \"cross-section area\", 20.0e-2)\nupdate!(beam_elements, \"torsional moment of inertia 1\", 10.0e-5)\nupdate!(beam_elements, \"torsional moment of inertia 2\", 10.0e-5)\nupdate!(beam_elements, \"polar moment of inertia\", 30.0e-5)The direction of beam is defined in same way than in ABAQUS. That is, we have a tangent direction and one normal direction. The third direction is then cross product of tangent and normal. Because the second area moment is same in both directions, we can choose normal direction freely.for element in beam_elements\n    X1, X2 = element(\"geometry\", 0.0)\n    t = (X2-X1)/norm(X2-X1)\n    I = eye(3)\n    k = indmax([norm(cross(t, I[:,k])) for k in 1:3])\n    n = cross(t, I[:,k])/norm(cross(t, I[:,k]))\n    update!(element, \"normal\", n)\nendCreate boundary conditions: fix all degrees of freedom for nodes in a set FIXED. Here we first create elements of type Poi1 for each node j in set FIXED, update geometry field and then create new fields fixed displacmeent 1, fixed displacement 2, and so on, where the displacement / rotation is prescribed.bc_elements = [Element(Poi1, [j]) for j in mesh.node_sets[:FIXED]]\nupdate!(bc_elements, \"geometry\", mesh.nodes)\nfor i=1:3\n    update!(bc_elements, \"fixed displacement $i\", 0.0)\n    update!(bc_elements, \"fixed rotation $i\", 0.0)\nendCreate a problem, containing beam elements and boundary conditions:frame = Problem(Beam, \"3d frame\", 6)\nadd_elements!(frame, beam_elements)\nadd_elements!(frame, bc_elements)Perform modal analysisstep = Analysis(Modal)\nxdmf = Xdmf(joinpath(datadir, \"3d_frame_results\"); overwrite=true)\nadd_results_writer!(step, xdmf)\nadd_problems!(step, [frame])\nrun!(step)\nclose(xdmf.hdf)Each Analysis can have properties, e.g. time, maximum number of iterations, convergence tolerance and so on. Eigenvalues of calculation are stored as a properties of analysis:freqs = sqrt.(step.properties.eigvals) / (2*pi)\nprintln(\"Natural frequencies [Hz]: $(round.(freqs, 2))\")(Image: mode5)This page was generated using Literate.jl."
+},
+
+{
     "location": "examples/generate_stiffness_matrices.html#",
     "page": "Generating local matrices for problems",
     "title": "Generating local matrices for problems",
@@ -677,7 +693,7 @@ var documenterSearchIndex = {"docs": [
     "page": "AbaqusReader.jl documentation",
     "title": "Exported functions",
     "category": "section",
-    "text": "AbaqusReader.abaqus_read_mesh\nAbaqusReader.abaqus_read_model\nAbaqusReader.create_surface_elements"
+    "text": "AbaqusReader.abaqus_download\nAbaqusReader.abaqus_read_mesh\nAbaqusReader.abaqus_read_model\nAbaqusReader.create_surface_elements"
 },
 
 {
@@ -734,6 +750,38 @@ var documenterSearchIndex = {"docs": [
     "title": "References",
     "category": "section",
     "text": "Heat equation. (2018, January 5). In Wikipedia, The Free Encyclopedia. Retrieved 00:49, January 30, 2018, from https://en.wikipedia.org/w/index.php?title=Heat_equation&oldid=818847673\nHeat transfer. (2018, January 26). In Wikipedia, The Free Encyclopedia. Retrieved 00:48, January 30, 2018, from https://en.wikipedia.org/w/index.php?title=Heat_transfer&oldid=822415173"
+},
+
+{
+    "location": "packages/FEMBeam/index.html#",
+    "page": "Introduction",
+    "title": "Introduction",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "packages/FEMBeam/index.html#Introduction-1",
+    "page": "Introduction",
+    "title": "Introduction",
+    "category": "section",
+    "text": "Package contains beam formulations for JuliaFEM."
+},
+
+{
+    "location": "packages/FEMBeam/index.html#Theory-1",
+    "page": "Introduction",
+    "title": "Theory",
+    "category": "section",
+    "text": "Theory of beam formulations comes here."
+},
+
+{
+    "location": "packages/FEMBeam/index.html#Examples-1",
+    "page": "Introduction",
+    "title": "Examples",
+    "category": "section",
+    "text": "DocTestSetup = quote\n    using FEMBase\n    using FEMBeam\nendSimple calculation examples here."
 },
 
 {
