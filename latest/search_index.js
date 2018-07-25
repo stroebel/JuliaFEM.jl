@@ -125,7 +125,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Mesh",
     "title": "Defining new mesh parsers",
     "category": "section",
-    "text": "Whould work somehow like this:type DemoReader <: AbstractMeshReader\n    handle :: String\nend\n\nfunction read_mesh!(m::Mesh, r::DemoReader)\n    # parse file and insert results to `m`.\nend\n\nmesh = Mesh()\nreader = DemoReader(\"file.inp\")\nread_mesh!(mesh, reader)"
+    "text": "Whould work somehow like this:mutable struct DemoReader <: AbstractMeshReader\n    handle :: String\nend\n\nfunction read_mesh!(m::Mesh, r::DemoReader)\n    # parse file and insert results to `m`.\nend\n\nmesh = Mesh()\nreader = DemoReader(\"file.inp\")\nread_mesh!(mesh, reader)"
 },
 
 {
@@ -634,42 +634,18 @@ var documenterSearchIndex = {"docs": [
 
 {
     "location": "packages/AsterReader/index.html#",
-    "page": "AsterReader.jl documentation",
-    "title": "AsterReader.jl documentation",
+    "page": "AsterReader.jl",
+    "title": "AsterReader.jl",
     "category": "page",
     "text": ""
 },
 
 {
-    "location": "packages/AsterReader/index.html#AsterReader.jl-documentation-1",
-    "page": "AsterReader.jl documentation",
-    "title": "AsterReader.jl documentation",
+    "location": "packages/AsterReader/index.html#AsterReader.jl-1",
+    "page": "AsterReader.jl",
+    "title": "AsterReader.jl",
     "category": "section",
-    "text": "DocTestSetup = quote\n    using AsterReader\nend"
-},
-
-{
-    "location": "packages/AsterReader/index.html#Exported-functions-1",
-    "page": "AsterReader.jl documentation",
-    "title": "Exported functions",
-    "category": "section",
-    "text": "aster_read_mesh"
-},
-
-{
-    "location": "packages/AsterReader/index.html#Internal-functions-1",
-    "page": "AsterReader.jl documentation",
-    "title": "Internal functions",
-    "category": "section",
-    "text": ""
-},
-
-{
-    "location": "packages/AsterReader/index.html#Index-1",
-    "page": "AsterReader.jl documentation",
-    "title": "Index",
-    "category": "section",
-    "text": ""
+    "text": "Pages = [\"index.md\", \"api.md\"]Package can be used to read Code Aster .med and .rmed file formats. To read Code Aster .med file (exported using SALOME), one has to writeaster_read_mesh(fn)where fn is the name of the mesh file. Result is a simple dictionary.In case of several mesh exists in a single file, one must provide also mesh name, e.g.aster_read_mesh(fn, mesh_name=\"my_mesh\")Package can also be used to read results from .rmed files. This is still highly experimental feature and can be used mainly to compare calculation results done using Code Aster to results produced by own FE code."
 },
 
 {
