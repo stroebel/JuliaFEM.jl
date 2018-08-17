@@ -155,6 +155,7 @@ julia&gt; grad!(bi, gradu, u)
            &quot;1 + u + v + u*v&quot;
        );
 
+
 julia&gt; eval(code)</code></pre><p>What we have defined is a interpolation polynomial and &quot;corner points&quot;. As a result, we have a new basis <code>MyQuad</code>, working just like expected. All Lagrange polynomials are done like this.</p><pre><code class="language-julia-repl">julia&gt; B = MyQuad()
 ex-FEMBase.MyQuad()
 
