@@ -241,70 +241,6 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "packages/FEMBase/fields.html#FEMBase.AbstractField",
-    "page": "Fields",
-    "title": "FEMBase.AbstractField",
-    "category": "type",
-    "text": "AbstractField\n\nAbstract supertype for all fields in JuliaFEM.\n\n\n\n\n\n"
-},
-
-{
-    "location": "packages/FEMBase/fields.html#FEMBase.DCTI",
-    "page": "Fields",
-    "title": "FEMBase.DCTI",
-    "category": "type",
-    "text": "DCTI{T} <: AbstractField\n\nDiscrete, constant, time-invariant field.\n\nThis field is constant in both spatial direction and time direction, i.e. df/dX = 0 and df/dt = 0.\n\nExample\n\njulia> DCTI(1)\nFEMBase.DCTI{Int64}(1)\n\n\n\n\n\n"
-},
-
-{
-    "location": "packages/FEMBase/fields.html#FEMBase.DVTI",
-    "page": "Fields",
-    "title": "FEMBase.DVTI",
-    "category": "type",
-    "text": "DVTI{N,T} <: AbstractField\n\nDiscrete, variable, time-invariant field.\n\nThis is constant in time direction, but not in spatial direction, i.e. df/dt = 0 but df/dX != 0. The basic structure of data is Tuple, and it is implicitly assumed that length of field matches to the number of shape functions, so that interpolation in spatial direction works.\n\nExample\n\njulia> DVTI(1, 2, 3)\nFEMBase.DVTI{3,Int64}((1, 2, 3))\n\n\n\n\n\n"
-},
-
-{
-    "location": "packages/FEMBase/fields.html#FEMBase.DCTV",
-    "page": "Fields",
-    "title": "FEMBase.DCTV",
-    "category": "type",
-    "text": "DCTV{T} <: AbstractField\n\nDiscrete, constant, time variant field. This type of field can change in time direction but not in spatial direction.\n\nExample\n\nField having value 5 at time 0.0 and value 10 at time 1.0:\n\njulia> DCTV(0.0 => 5, 1.0 => 10)\nFEMBase.DCTV{Int64}(Pair{Float64,Int64}[0.0=>5, 1.0=>10])\n\n\n\n\n\n"
-},
-
-{
-    "location": "packages/FEMBase/fields.html#FEMBase.DVTV",
-    "page": "Fields",
-    "title": "FEMBase.DVTV",
-    "category": "type",
-    "text": "DVTV{N,T} <: AbstractField\n\nDiscrete, variable, time variant field. The most general discrete field can change in both temporal and spatial direction.\n\nExample\n\njulia> DVTV(0.0 => (1, 2), 1.0 => (2, 3))\nFEMBase.DVTV{2,Int64}(Pair{Float64,Tuple{Int64,Int64}}[0.0=>(1, 2), 1.0=>(2, 3)])\n\n\n\n\n\n"
-},
-
-{
-    "location": "packages/FEMBase/fields.html#FEMBase.CVTV",
-    "page": "Fields",
-    "title": "FEMBase.CVTV",
-    "category": "type",
-    "text": "CVTV <: AbstractField\n\nContinuous, variable, time variant field.\n\nExample\n\njulia> f = CVTV((xi,t) -> xi*t)\nFEMBase.CVTV(#1)\n\n\n\n\n\n"
-},
-
-{
-    "location": "packages/FEMBase/fields.html#FEMBase.DVTId",
-    "page": "Fields",
-    "title": "FEMBase.DVTId",
-    "category": "type",
-    "text": "DVTId(X::Dict)\n\nDiscrete, variable, time invariant dictionary field.\n\n\n\n\n\n"
-},
-
-{
-    "location": "packages/FEMBase/fields.html#FEMBase.DVTVd",
-    "page": "Fields",
-    "title": "FEMBase.DVTVd",
-    "category": "type",
-    "text": "DVTVd(time => data::Dict)\n\nDiscrete, variable, time variant dictionary field.\n\n\n\n\n\n"
-},
-
-{
     "location": "packages/FEMBase/fields.html#Types-1",
     "page": "Fields",
     "title": "Types",
@@ -809,43 +745,11 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "api.html#FEMBase.Element",
-    "page": "API documentation",
-    "title": "FEMBase.Element",
-    "category": "type",
-    "text": "Element(topology, connectivity)\n\nConstruct a new element where topology is the topological type of the element and connectivity contains node numbers where element is connected.\n\nTopological types\n\n1d elements\n\nSeg2\nSeg3\n\n2d elements\n\nTri3\nTri6\nTri7\nQuad4\nQuad8\nQuad9\n\n3d elements\n\nTet4\nTet10\nHex8\nHex20\nHex27\nPyr5\nWedge6\nWedge15\n\nExamples\n\nelement = Element(Tri3, (1, 2, 3))\n\n\n\n\n\n"
-},
-
-{
-    "location": "api.html#FEMBase.Problem",
-    "page": "API documentation",
-    "title": "FEMBase.Problem",
-    "category": "type",
-    "text": "Problem{P<:AbstractProblem}\n\nDefines a new problem of type P, where P characterizes the physics of the problem. P can be for example Elasticity, if the physics of the system is described by Cauchy\'s stress equation ∇⋅σ + b = ̈ρu, or Heat, if the physics of the problem is described by heat equation -∇⋅(k∇u) = f.\n\n\n\n\n\n"
-},
-
-{
-    "location": "api.html#JuliaFEM.Elasticity",
-    "page": "API documentation",
-    "title": "JuliaFEM.Elasticity",
-    "category": "type",
-    "text": "Elasticity equations.\n\nField equation is:\n\nm∂²u/∂t² = ∇⋅σ - b\n\nWeak form is: find u∈U such that ∀v in V\n\nδW := ∫ρ₀∂²u/∂t²⋅δu dV₀ + ∫S:δE dV₀ - ∫b₀⋅δu dV₀ - ∫t₀⋅δu dA₀ = 0\n\nwhere\n\nρ₀ = density\nb₀ = displacement load\nt₀ = displacement traction\n\nFormulations\n\nplane stress, plane strain, 3D\n\nReferences\n\nhttps://en.wikipedia.org/wiki/Linearelasticity https://en.wikipedia.org/wiki/Finitestraintheory https://en.wikipedia.org/wiki/Stressmeasures https://en.wikipedia.org/wiki/Mooney%E2%80%93Rivlinsolid https://en.wikipedia.org/wiki/Strainenergydensityfunction https://en.wikipedia.org/wiki/Planestress https://en.wikipedia.org/wiki/Hooke\'slaw\n\n\n\n\n\n"
-},
-
-{
     "location": "api.html#Types-1",
     "page": "API documentation",
     "title": "Types",
     "category": "section",
     "text": "JuliaFEM.Element\nJuliaFEM.Problem\nJuliaFEM.Elasticity"
-},
-
-{
-    "location": "api.html#FEMBase.update!",
-    "page": "API documentation",
-    "title": "FEMBase.update!",
-    "category": "function",
-    "text": "update!(elements, field_name, data)\n\nGiven a list of elements, field name and data, update field to elements. Data is passed directly to the field-function.\n\nExamples\n\nCreate two elements with topology Seg2, one is connecting to nodes (1, 2) and the other is connecting to (2, 3). Some examples of updating fields:\n\nelements = [Element(Seg2, [1, 2]), Element(Seg2, [2, 3])]\nX = Dict(1 => 0.0, 2 => 1.0, 3 => 2.0)\nu = Dict(1 => 0.0, 2 => 0.0, 3 => 0.0)\nupdate!(elements, \"geometry\", X)\nupdate!(elements, \"displacement\", 0.0 => u)\nupdate!(elements, \"youngs modulus\", 210.0e9)\nupdate!(elements, \"time-dependent force\", 0.0 => 0.0)\nupdate!(elements, \"time-dependent force\", 1.0 => 100.0)\n\nWhen using dictionaries in definition of fields, key of dictionary corresponds to node id, that is, updating field geometry in the example above is updating values (0.0, 1.0) for the first elements and values (1.0, 2.0) to the second element. For time dependent field, syntax time => data is used. If field is initialized without time-dependency, it cannot be changed to be time-dependent afterwards. If unsure, it\'s better to initialize field with time dependency.\n\n\n\n\n\n"
 },
 
 {
