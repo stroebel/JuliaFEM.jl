@@ -2,11 +2,12 @@ language: julia
 
 os:
   - linux
+  - osx
+  - windows
 
 julia:
-  - 0.7
   - 1.0
-  - nightly
+  - 1.4
 
 addons:
     apt:
@@ -17,5 +18,15 @@ matrix:
    allow_failures:
        - julia: nightly
 
+jobs:
+    include:
+        - stage: "Documentation"
+          os: linux
+          script:
+            - julia --project=docs/ -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+          after_success:
+            - julia --project=docs/ docs/make.jl
+
 after_success:
-    - julia -e 'cd(Pkg.dir("JuliaFEM")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+    - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+
